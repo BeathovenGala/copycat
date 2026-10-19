@@ -35,6 +35,14 @@ class WatchService : Service() {
         }
     }
 
+    // Fires every time the phone joins a Wi-Fi network while the service runs.
+    private val wifiCallback = object : android.net.ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: android.net.Network) {
+            handler.postDelayed({ Sender.connectAndRetry(this@WatchService) }, WIFI_SETTLE_MS)
+        }
+    }
+    private var isWifiCallbackRegistered = false
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -50,6 +58,12 @@ class WatchService : Service() {
         if (prefs.autoScreenshots) screenshots.start() else screenshots.stop()
         handler.removeCallbacks(retryTick)
         handler.post(retryTick)
+        if (!isWifiCallbackRegistered) {
+            val request = android.net.NetworkRequest.Builder()
+                .addTransportType(android.net.NetworkCapabilities.TRANSPORT_WIFI).build()
+            getSystemService(android.net.ConnectivityManager::class.java).registerNetworkCallback(request, wifiCallback)
+            isWifiCallbackRegistered = true
+        }
         return START_STICKY
     }
 
@@ -57,6 +71,10 @@ class WatchService : Service() {
         stopReader()
         screenshots.stop()
         handler.removeCallbacks(retryTick)
+        if (isWifiCallbackRegistered) {
+            getSystemService(android.net.ConnectivityManager::class.java).unregisterNetworkCallback(wifiCallback)
+            isWifiCallbackRegistered = false
+        }
         super.onDestroy()
     }
 
@@ -148,6 +166,7 @@ class WatchService : Service() {
         private const val NOTIFICATION_ID = 1
         private const val DEBOUNCE_MS = 400L
         private const val RETRY_INTERVAL_MS = 30_000L
+        private const val WIFI_SETTLE_MS = 3000L
         private const val UPDATE_CHANNEL = "updates"
         private const val UPDATE_NOTIFICATION_ID = 2
         const val ACTION_RESTART_READER = "restart_reader"

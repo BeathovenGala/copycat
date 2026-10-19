@@ -18,6 +18,8 @@ data class Laptop(val host: String, val port: Int, val name: String)
 
 class NotPairedException : IOException("Not paired with a laptop")
 class UnauthorizedException : IOException("Laptop rejected this phone — pair again")
+class PinRequiredException : IOException("This laptop needs a PIN")
+class MultipleLaptopsException(val laptops: List<Laptop>) : IOException("Several laptops found — open CopyCat to choose yours")
 
 object Net {
     private const val DISCOVERY_PORT = 47821
@@ -82,7 +84,7 @@ object Net {
                 prefs.laptopName = body.optString("name", laptop.name)
                 prefs.token = body.getString("token")
             }
-            403 -> throw IOException("Wrong PIN")
+            403 -> throw if (pin.isEmpty()) PinRequiredException() else IOException("Wrong PIN")
             429 -> throw IOException("Too many wrong PINs — wait a minute")
             else -> throw IOException("Pairing failed (${conn.responseCode})")
         }
@@ -100,21 +102,34 @@ object Net {
             }
         }
 
-    /** Finds the laptop on this Wi-Fi and connects without a PIN (the laptop auto-accepts by default). */
+    /**
+     * Finds the laptop on this Wi-Fi and connects without a PIN (the laptop auto-accepts by default).
+     * Once paired, only that laptop is used; switching is left to the user so the phone never
+     * starts sending to someone else's laptop on a shared network.
+     */
     fun ensurePaired(context: Context): Laptop {
         val prefs = Prefs(context)
         val known = prefs.host?.takeIf { prefs.token != null }
         if (known != null && ping(known, prefs.port) != null) return Laptop(known, prefs.port, prefs.laptopName ?: known)
         val found = discover(context)
-        val laptop = found.firstOrNull { it.name == prefs.laptopName } ?: found.firstOrNull()
-            ?: throw IOException("Laptop not found on this Wi-Fi")
+        val laptop = if (prefs.token != null) {
+            found.firstOrNull { it.name == prefs.laptopName } ?: throw IOException("${prefs.laptopName} not found on this Wi-Fi")
+        } else when (found.size) {
+            0 -> throw IOException("Laptop not found on this Wi-Fi")
+            1 -> found[0]
+            else -> throw MultipleLaptopsException(found)
+        }
+        connectTo(laptop, prefs)
+        return laptop
+    }
+
+    fun connectTo(laptop: Laptop, prefs: Prefs) {
         if (prefs.token != null && laptop.name == prefs.laptopName) {
             prefs.host = laptop.host
             prefs.port = laptop.port
         } else {
             pair(laptop, "", prefs)
         }
-        return laptop
     }
 
     // The laptop's IP can change (DHCP) and it may forget us, so reconnect once on failure.

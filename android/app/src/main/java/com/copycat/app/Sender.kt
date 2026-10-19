@@ -51,12 +51,13 @@ object Sender {
     }
 
     /** Connects if needed, then delivers anything from the last day that didn't go through. */
-    fun connectAndRetry(context: Context, onDone: (() -> Unit)? = null) {
+    fun connectAndRetry(context: Context, onDone: ((Throwable?) -> Unit)? = null) {
         val app = context.applicationContext
         executor.execute {
             val prefs = Prefs(app)
             val pending = prefs.history().filter { !it.sent && System.currentTimeMillis() - it.at < RETRY_WINDOW_MS }
-            if (runCatching { Net.ensurePaired(app) }.isSuccess) {
+            val connected = runCatching { Net.ensurePaired(app) }
+            if (connected.isSuccess) {
                 pending.reversed().forEach { item ->
                     val ok = runCatching {
                         if (item.kind == "text") Net.sendText(app, item.text)
@@ -67,7 +68,7 @@ object Sender {
             }
             main.post {
                 listeners.toList().forEach { it() }
-                onDone?.invoke()
+                onDone?.invoke(connected.exceptionOrNull())
             }
         }
     }
@@ -88,12 +89,14 @@ object Sender {
     }
 
     private fun report(context: Context, result: Result<Unit>, successMessage: String?) {
+        if (result.isFailure) RetryJob.schedule(context)
         main.post {
             listeners.toList().forEach { it() }
             val message = result.fold(
                 onSuccess = { successMessage },
                 onFailure = { e ->
                     when (e) {
+                        is MultipleLaptopsException -> "Open CopyCat and choose your laptop"
                         is NotPairedException -> "Laptop not found — will send when it's back"
                         else -> "Laptop not reachable — will send when it's back"
                     }

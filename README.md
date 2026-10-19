@@ -35,6 +35,12 @@ adb shell pm grant com.copycat.app android.permission.READ_LOGS
 
 (On OnePlus/Oppo/Realme first enable *Developer options → Disable permission monitoring*.) Then turn on *Send automatically when I copy*.
 
+## Connecting
+
+The phone finds the laptop by itself on the same Wi-Fi — no PIN. If it sees several CopyCat laptops the first time, it asks which one is yours. After that it only ever sends to that laptop; use **Find laptop** to switch.
+
+Not on the same Wi-Fi? Anything you send waits on the phone and is delivered automatically once you're back (within seconds if a background switch is on, otherwise within ~5 minutes or when you open the app).
+
 ## Updates
 
 Both apps check for new versions and update themselves.

@@ -31,6 +31,8 @@ class MainActivity : Activity() {
     private lateinit var empty: TextView
     private lateinit var historyAdapter: ArrayAdapter<HistoryItem>
     private val refresh = { renderHistory() }
+    private var connectError: Throwable? = null
+    private var isChoosing = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,7 +88,11 @@ class MainActivity : Activity() {
         Sender.addListener(refresh)
         renderStatus()
         renderHistory()
-        Sender.connectAndRetry(this) { renderStatus() }
+        Sender.connectAndRetry(this) { error ->
+            connectError = error
+            renderStatus()
+            if (error is MultipleLaptopsException) chooseLaptop(error.laptops)
+        }
         checkForUpdate()
         // Android 13+ only allows log access to start while the app is in the foreground.
         if (prefs.needsService) WatchService.start(this, restartReader = prefs.autoSend)
@@ -131,7 +137,8 @@ class MainActivity : Activity() {
     }
 
     private fun renderStatus() {
-        status.text = "v${Updater.currentVersion(this)} · " + if (prefs.isPaired) "Connected to ${prefs.laptopName} (${prefs.host})" else "Looking for your laptop… make sure CopyCat is running on it and you're on the same Wi-Fi."
+        status.text = "v${Updater.currentVersion(this)} · " + if (prefs.isPaired) (if (connectError == null) "Connected to ${prefs.laptopName} (${prefs.host})"
+            else "${prefs.laptopName} isn't reachable. It reconnects by itself when you're on the same Wi-Fi.") else "Looking for your laptop… make sure CopyCat is running on it and you're on the same Wi-Fi."
         auto.isChecked = prefs.autoSend
         shots.isChecked = prefs.autoScreenshots
         autoHint.text = when {
@@ -177,13 +184,41 @@ class MainActivity : Activity() {
     private fun startPairing() {
         val searching = Toast.makeText(this, "Looking for your laptop…", Toast.LENGTH_SHORT).apply { show() }
         Thread {
-            val result = runCatching { Net.ensurePaired(this) }
+            val found = runCatching { Net.discover(this) }.getOrDefault(emptyList())
             runOnUiThread {
                 searching.cancel()
-                result.fold(
-                    { Toast.makeText(this, "Connected to ${it.name}", Toast.LENGTH_SHORT).show() },
-                    { askManualAddress() },
-                )
+                when (found.size) {
+                    0 -> askManualAddress()
+                    1 -> connect(found[0])
+                    else -> chooseLaptop(found)
+                }
+            }
+        }.start()
+    }
+
+    private fun chooseLaptop(laptops: List<Laptop>) {
+        if (isChoosing) return
+        isChoosing = true
+        AlertDialog.Builder(this)
+            .setTitle("Which laptop is yours?")
+            .setItems(laptops.map { "${it.name}  (${it.host})" }.toTypedArray()) { _, i -> connect(laptops[i]) }
+            .setOnDismissListener { isChoosing = false }
+            .show()
+    }
+
+    private fun connect(laptop: Laptop) {
+        Thread {
+            val result = runCatching { Net.connectTo(laptop, prefs) }
+            runOnUiThread {
+                when (val e = result.exceptionOrNull()) {
+                    null -> {
+                        connectError = null
+                        Toast.makeText(this, "Connected to ${laptop.name}", Toast.LENGTH_SHORT).show()
+                        Sender.connectAndRetry(this)
+                    }
+                    is PinRequiredException -> askPin(laptop)
+                    else -> Toast.makeText(this, e.message ?: "Couldn't connect", Toast.LENGTH_LONG).show()
+                }
                 renderStatus()
             }
         }.start()
@@ -205,7 +240,7 @@ class MainActivity : Activity() {
                     val name = Net.ping(host, Prefs.DEFAULT_PORT)
                     runOnUiThread {
                         if (name == null) Toast.makeText(this, "No CopyCat at $host", Toast.LENGTH_LONG).show()
-                        else askPin(Laptop(host, Prefs.DEFAULT_PORT, name))
+                        else connect(Laptop(host, Prefs.DEFAULT_PORT, name))
                     }
                 }.start()
             }
@@ -228,6 +263,7 @@ class MainActivity : Activity() {
                 Thread {
                     val result = runCatching { Net.pair(laptop, pin, prefs) }
                     runOnUiThread {
+                        if (result.isSuccess) connectError = null
                         Toast.makeText(this, result.fold({ "Paired with ${laptop.name}" }, { it.message ?: "Pairing failed" }), Toast.LENGTH_LONG).show()
                         renderStatus()
                     }
