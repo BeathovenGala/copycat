@@ -1,0 +1,10 @@
+bin/
+obj/
+dist/
+.gradle/
+build/
+local.properties
+*.jks
+*.keystore
+signing.properties
+tools/icon-512.png

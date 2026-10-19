@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>CopyCat</AssemblyName>
+    <RootNamespace>CopyCat</RootNamespace>
+    <ApplicationIcon>copycat.ico</ApplicationIcon>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Version>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../VERSION').Trim())</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <EmbeddedResource Include="copycat.ico" LogicalName="copycat.ico" />
+  </ItemGroup>
+
+</Project>
