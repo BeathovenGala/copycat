@@ -7,4 +7,3 @@ local.properties
 *.jks
 *.keystore
 signing.properties
-tools/icon-512.png

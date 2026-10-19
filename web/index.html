@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CopyCat">
+<meta name="theme-color" content="#7C5CFF">
+<title>CopyCat</title>
+<style>
+  :root {
+    --bg: #f6f5fb; --card: #fff; --text: #1b1a22; --muted: #6d6a7c; --line: #e6e3f0;
+    --accent: #7C5CFF; --accent-text: #fff; --ok: #1f9d55; --bad: #d64545;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121117; --card: #1d1b25; --text: #f1eff8; --muted: #a29fb3; --line: #2e2b3a; --accent: #9D85FF; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  }
+  main { max-width: 520px; margin: 0 auto; }
+  h1 { font-size: 28px; margin: 8px 0 2px; }
+  .status { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+  .status.bad { color: var(--bad); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 14px; }
+  textarea {
+    width: 100%; min-height: 110px; resize: vertical; border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px; font: inherit; color: inherit; background: transparent;
+  }
+  button {
+    width: 100%; border: 0; border-radius: 12px; padding: 14px; font: 600 16px/1 inherit;
+    background: var(--accent); color: var(--accent-text); margin-top: 10px; cursor: pointer;
+  }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; }
+  h2 { font-size: 17px; margin: 22px 0 8px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; }
+  li .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  li .m { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .hint { color: var(--muted); font-size: 13px; }
+  .toast {
+    position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px;
+    opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw;
+  }
+  .toast.show { opacity: 1; }
+  #pinBox { display: none; }
+  input[type=text] {
+    width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 12px; font: inherit;
+    color: inherit; background: transparent; letter-spacing: 4px; text-align: center;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>CopyCat</h1>
+  <div class="status" id="status">Connecting…</div>
+
+  <div class="card" id="pinBox">
+    <div class="hint">This laptop needs a PIN. Find it in the CopyCat menu on the laptop.</div>
+    <input type="text" id="pin" inputmode="numeric" maxlength="6" placeholder="000000">
+    <button id="pinBtn">Connect</button>
+  </div>
+
+  <div class="card">
+    <textarea id="text" placeholder="Paste text here"></textarea>
+    <button id="sendText">Send text</button>
+    <button class="secondary" id="pasteSend" hidden>Paste &amp; send</button>
+  </div>
+
+  <div class="card">
+    <input type="file" id="files" multiple hidden>
+    <button id="pick">Send photos or files</button>
+  </div>
+
+  <p class="hint" id="homeHint" hidden>Tip: tap Share → <b>Add to Home Screen</b> to open CopyCat like an app.</p>
+
+  <h2>Recent</h2>
+  <ul id="recent"></ul>
+  <p class="hint" id="empty">Things you send show up here. Tap one to send it again.</p>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const MAX_RECENT = 20;
+  const store = {
+    get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
+    set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} },
+  };
+  const device = /iPhone/.test(navigator.userAgent) ? "iPhone" : /iPad/.test(navigator.userAgent) ? "iPad"
+    : /Android/.test(navigator.userAgent) ? "Android browser" : "Browser";
+
+  let toastTimer;
+  function toast(msg) {
+    $("toast").textContent = msg;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2200);
+  }
+
+  function setStatus(msg, bad) {
+    $("status").textContent = msg;
+    $("status").classList.toggle("bad", !!bad);
+  }
+
+  async function pair(pin) {
+    const res = await fetch("/pair", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin, device }),
+    });
+    if (res.status === 403) return false;
+    if (!res.ok) throw new Error("Pairing failed (" + res.status + ")");
+    const body = await res.json();
+    store.set("token", body.token);
+    return true;
+  }
+
+  async function connect() {
+    try {
+      const ping = await (await fetch("/ping")).json();
+      if (!store.get("token") && !(await pair(""))) {
+        $("pinBox").style.display = "block";
+        setStatus("Enter the PIN to connect to " + ping.name);
+        return;
+      }
+      $("pinBox").style.display = "none";
+      setStatus("Connected to " + ping.name);
+    } catch {
+      setStatus("Can't reach the laptop. Is CopyCat running and are you on the same Wi-Fi?", true);
+    }
+  }
+
+  async function post(path, body, contentType) {
+    const res = await fetch(path, {
+      method: "POST", body,
+      headers: { "Content-Type": contentType, "X-CopyCat-Token": store.get("token") || "", "X-CopyCat-Device": device },
+    });
+    if (res.status === 401) {
+      store.set("token", null);
+      await connect();
+      throw new Error("Reconnected — try again");
+    }
+    if (!res.ok) throw new Error("Laptop returned " + res.status);
+  }
+
+  function remember(text) {
+    const recent = [{ text, at: Date.now() }, ...store.get("recent", []).filter(r => r.text !== text)].slice(0, MAX_RECENT);
+    store.set("recent", recent);
+    render();
+  }
+
+  function render() {
+    const recent = store.get("recent", []);
+    $("empty").hidden = recent.length > 0;
+    $("recent").replaceChildren(...recent.map(r => {
+      const li = document.createElement("li");
+      const t = document.createElement("div");
+      t.className = "t";
+      t.textContent = r.text.replace(/\s+/g, " ");
+      const m = document.createElement("div");
+      m.className = "m";
+      m.textContent = new Date(r.at).toLocaleString();
+      li.append(t, m);
+      li.onclick = () => sendText(r.text);
+      return li;
+    }));
+  }
+
+  async function sendText(text) {
+    if (!text.trim()) return toast("Nothing to send");
+    try {
+      await post("/text", text, "text/plain; charset=utf-8");
+      remember(text);
+      toast("Sent to laptop");
+      return true;
+    } catch (e) {
+      toast(e.message || "Couldn't send");
+    }
+  }
+
+  async function sendFiles(files) {
+    const button = $("pick");
+    button.disabled = true;
+    let sent = 0;
+    for (const file of files) {
+      button.textContent = `Sending ${sent + 1} of ${files.length}…`;
+      try {
+        await post("/file?name=" + encodeURIComponent(file.name || "shared"), file, file.type || "application/octet-stream");
+        sent++;
+      } catch (e) {
+        toast(e.message || "Couldn't send " + file.name);
+      }
+    }
+    button.disabled = false;
+    button.textContent = "Send photos or files";
+    if (sent) toast(sent === 1 ? "Sent to laptop" : `Sent ${sent} files`);
+  }
+
+  $("sendText").onclick = async () => {
+    if (await sendText($("text").value)) $("text").value = "";
+  };
+  $("pick").onclick = () => $("files").click();
+  $("files").onchange = () => {
+    const files = [...$("files").files];
+    $("files").value = "";
+    if (files.length) sendFiles(files);
+  };
+  $("pinBtn").onclick = async () => {
+    try {
+      if (await pair($("pin").value.trim())) connect();
+      else toast("Wrong PIN");
+    } catch (e) { toast(e.message); }
+  };
+
+  // Clipboard reads need a secure (https) page, which a laptop on the LAN usually isn't.
+  if (window.isSecureContext && navigator.clipboard?.readText) {
+    $("pasteSend").hidden = false;
+    $("pasteSend").onclick = async () => {
+      try { await sendText(await navigator.clipboard.readText()); } catch { toast("Clipboard access was blocked"); }
+    };
+  }
+  $("homeHint").hidden = !(/iPhone|iPad/.test(navigator.userAgent) && !navigator.standalone);
+
+  render();
+  connect();
+})();
+</script>
+</body>
+</html>

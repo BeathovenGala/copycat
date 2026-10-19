@@ -16,6 +16,11 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <EmbeddedResource Include="copycat.ico" LogicalName="copycat.ico" />
+    <EmbeddedResource Include="..\web\index.html" LogicalName="index.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.6.0" />
   </ItemGroup>
 
 </Project>

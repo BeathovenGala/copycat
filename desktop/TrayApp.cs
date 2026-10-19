@@ -157,6 +157,7 @@ public class TrayApp : ApplicationContext
         }
         menu.Items.Add(new ToolStripSeparator());
 
+        menu.Items.Add("Connect iPhone or another phone…", null, (_, _) => ShowConnectWindow());
         menu.Items.Add("Open received folder", null, (_, _) => OpenFolder());
         var settings = new ToolStripMenuItem("Settings");
         settings.DropDownItems.Add(Toggle("Start with Windows", Startup.IsEnabled(), on => Startup.Set(on)));
@@ -188,6 +189,37 @@ public class TrayApp : ApplicationContext
         else if (item.FilePath != null && File.Exists(item.FilePath)) CopyFileToClipboard(item.FilePath, item.Kind == "image");
         else { Notify("File is gone", item.Text); return; }
         Notify("Copied", Shorten(item.Text));
+    }
+
+    void ShowConnectWindow()
+    {
+        var url = $"http://{LocalAddresses().First()}:{Server.HttpPort}/";
+        using var qr = new QRCoder.QRCodeGenerator().CreateQrCode(url, QRCoder.QRCodeGenerator.ECCLevel.M);
+        using var png = new MemoryStream(new QRCoder.PngByteQRCode(qr).GetGraphic(10));
+        var form = new Form
+        {
+            Text = "Connect a phone to CopyCat",
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MaximizeBox = false,
+            MinimizeBox = false,
+            StartPosition = FormStartPosition.CenterScreen,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Padding = new Padding(16),
+            Icon = tray.Icon,
+        };
+        var layout = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false };
+        layout.Controls.Add(new Label
+        {
+            Text = $"Scan with the phone's camera, then in Safari tap Share → Add to Home Screen.{Environment.NewLine}Android phones can use the CopyCat app instead.",
+            AutoSize = true,
+            MaximumSize = new Size(380, 0),
+        });
+        layout.Controls.Add(new PictureBox { Image = Image.FromStream(png), SizeMode = PictureBoxSizeMode.AutoSize });
+        layout.Controls.Add(new TextBox { Text = url, ReadOnly = true, Width = 380 });
+        form.Controls.Add(layout);
+        form.Show();
+        form.Activate();
     }
 
     static void OpenFolder()

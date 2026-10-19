@@ -17,6 +17,12 @@ public class Server(Store store, Action<string, string> onText, Action<string, s
     const int MaxPairFailures = 5;
     static readonly TimeSpan PairLockout = TimeSpan.FromMinutes(1);
 
+    static readonly Lazy<string> WebPage = new(() =>
+    {
+        using var stream = typeof(Server).Assembly.GetManifestResourceStream("index.html")!;
+        return new StreamReader(stream).ReadToEnd();
+    });
+
     WebApplication? app;
     UdpClient? udp;
     int pairFailures;
@@ -30,6 +36,7 @@ public class Server(Store store, Action<string, string> onText, Action<string, s
         builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = MaxUpload);
         app = builder.Build();
 
+        app.MapGet("/", () => Results.Content(WebPage.Value, "text/html; charset=utf-8"));
         app.MapGet("/ping", () => Results.Json(new { app = "copycat", name = Environment.MachineName }));
         app.MapPost("/pair", Pair);
         app.MapPost("/text", ReceiveText);
