@@ -10,9 +10,10 @@ public record Release(Version Version, string ExeUrl);
 public static class Updater
 {
     const string LatestUrl = "https://api.github.com/repos/BeathovenGala/copycat/releases/latest";
-    static readonly HttpClient Http = CreateClient();
-
+    // Must initialize before Http, which reads it.
     public static Version Current { get; } = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0);
+
+    static readonly HttpClient Http = CreateClient();
 
     public static async Task<Release?> CheckAsync()
     {

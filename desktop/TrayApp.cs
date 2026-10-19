@@ -83,6 +83,7 @@ public class TrayApp : ApplicationContext
         try { await server.StartAsync(); }
         catch (Exception ex)
         {
+            File.AppendAllText(Path.Combine(Store.Dir, "error.log"), $"{DateTime.Now:o} server start failed: {ex}{Environment.NewLine}");
             ui.Post(_ => tray.ShowBalloonTip(5000, "CopyCat couldn't start", ex.Message, ToolTipIcon.Error), null);
         }
     }
