@@ -32,12 +32,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startServer()
         buildMenu()
 
+        // The delegate lives for the whole app run, so this loop never needs cancelling.
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 30 * 1_000_000_000)
-            await checkForUpdates(manual: false)
-        }
-        Timer.scheduledTimer(withTimeInterval: AppDelegate.updateInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor in await self?.checkForUpdates(manual: false) }
+            while true {
+                await checkForUpdates(manual: false)
+                try? await Task.sleep(nanoseconds: UInt64(AppDelegate.updateInterval) * 1_000_000_000)
+            }
         }
     }
 
