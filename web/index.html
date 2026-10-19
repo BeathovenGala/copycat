@@ -49,6 +49,9 @@
   }
   .toast.show { opacity: 1; }
   #pinBox { display: none; }
+  code { font-size: 12px; word-break: break-all; }
+  summary { cursor: pointer; }
+  #pick { margin-top: 0; }
   input[type=text] {
     width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 12px; font: inherit;
     color: inherit; background: transparent; letter-spacing: 4px; text-align: center;
@@ -78,6 +81,16 @@
   </div>
 
   <p class="hint" id="homeHint" hidden>Tip: tap Share → <b>Add to Home Screen</b> to open CopyCat like an app.</p>
+
+  <details class="card" id="shortcuts">
+    <summary><b>Use with Apple Shortcuts</b></summary>
+    <p class="hint">Make a shortcut with <b>Get Contents of URL</b> → Method <b>POST</b>, add a header
+      <b>X-CopyCat-Token</b> with the key below, and set Request Body to <b>File</b>.</p>
+    <p class="hint">Text or clipboard: <code id="textUrl"></code><br>
+      Photos and files: <code id="fileUrl"></code> (add <code>?name=</code> + the file name)</p>
+    <p class="hint">Key: <code id="tokenText"></code></p>
+    <button class="secondary" id="copyToken">Copy key</button>
+  </details>
 
   <h2>Recent</h2>
   <ul id="recent"></ul>
@@ -131,6 +144,7 @@
       }
       $("pinBox").style.display = "none";
       setStatus("Connected to " + ping.name);
+      $("tokenText").textContent = store.get("token");
     } catch {
       setStatus("Can't reach the laptop. Is CopyCat running and are you on the same Wi-Fi?", true);
     }
@@ -225,6 +239,15 @@
       try { await sendText(await navigator.clipboard.readText()); } catch { toast("Clipboard access was blocked"); }
     };
   }
+  $("textUrl").textContent = location.origin + "/text";
+  $("fileUrl").textContent = location.origin + "/file";
+  $("copyToken").onclick = () => {
+    const range = document.createRange();
+    range.selectNodeContents($("tokenText"));
+    getSelection().removeAllRanges();
+    getSelection().addRange(range);
+    toast(document.execCommand("copy") ? "Key copied" : "Long-press the key to copy it");
+  };
   $("homeHint").hidden = !(/iPhone|iPad/.test(navigator.userAgent) && !navigator.standalone);
 
   render();

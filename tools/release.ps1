@@ -29,7 +29,7 @@ if ($LASTEXITCODE) { throw "Desktop build failed" }
 Copy-Item "$root\desktop\bin\publish\CopyCat.exe" "$dist\CopyCat.exe"
 
 if (-not $Notes) { $Notes = "CopyCat $tag" }
-$Notes += "`n`n**Phone:** download ``CopyCat.apk`` and install it.`n**Laptop (Windows):** download ``CopyCat.exe`` and run it.`n`nAlready installed? Both apps update themselves."
+$Notes += "`n`n**Phone:** download ``CopyCat.apk`` and install it.`n**Laptop (Windows):** download ``CopyCat.exe`` and run it.`n**Laptop (Mac):** download ``CopyCat-mac.zip`` (attached a few minutes after release by CI).`n**iPhone:** laptop menu → Connect iPhone, scan the QR code.`n`nAlready installed? Both apps update themselves."
 
 git -C $root push origin HEAD 2>&1 | Out-Null
 if ($LASTEXITCODE) { throw "git push failed" }

@@ -1,6 +1,6 @@
 # CopyCat
 
-Send what you copy, share or screenshot on your Android phone straight to your Windows laptop's clipboard, over your own Wi-Fi. No account, no cloud — the phone talks directly to the laptop.
+Send what you copy, share or screenshot on your phone straight to your laptop's clipboard (Windows or Mac; Android app, or any phone's browser), over your own Wi-Fi. No account, no cloud — the phone talks directly to the laptop.
 
 ## Install
 
@@ -13,10 +13,26 @@ Phone and laptop must be on the **same Wi-Fi**.
 
 CopyCat now lives in the system tray and starts with Windows.
 
+**Laptop (Mac, macOS 13+)** — *new, not yet tested on a real Mac*
+1. Download **[CopyCat-mac.zip](https://github.com/BeathovenGala/copycat/releases/latest/download/CopyCat-mac.zip)**, open it, and drag **CopyCat.app** into **Applications**.
+2. The app isn't notarized by Apple, so the first time **right-click it → Open → Open**. (On macOS 15+: try to open it once, then System Settings → Privacy & Security → **Open Anyway**.)
+3. If asked to allow incoming network connections, click **Allow**.
+
+CopyCat lives in the menu bar and starts at login.
+
 **Phone (Android 8+)**
 1. Open this page on your phone and download **[CopyCat.apk](https://github.com/BeathovenGala/copycat/releases/latest/download/CopyCat.apk)**.
 2. Tap it and allow installing from your browser if asked. If Play Protect warns, tap **Install anyway**.
 3. Open CopyCat — it finds your laptop by itself.
+
+**iPhone / iPad (or any phone without the app)**
+
+Apple doesn't allow installing apps outside the App Store, so iPhones use a web page the laptop serves:
+1. On the laptop: tray / menu bar icon → **Connect iPhone or another phone…** and scan the QR code.
+2. In Safari tap **Share → Add to Home Screen**. Open it any time to paste text or send photos and files.
+3. Optional: under *Use with Apple Shortcuts* on that page you'll find the address and key to build a Shortcut (e.g. "Get Clipboard → Get Contents of URL") and run it from the share sheet or **Back Tap** (Settings → Accessibility → Touch → Back Tap).
+
+iOS doesn't let any app read the clipboard or watch for screenshots in the background, so iPhone sending is always one tap.
 
 ## Use it
 
@@ -51,6 +67,7 @@ Data only travels over your local network, unencrypted. Phones on the same Wi-Fi
 
 ## Building
 
-- Desktop: .NET 8 — `dotnet build desktop`
+- Windows: .NET 8 — `dotnet build desktop`
+- Mac: Swift 5.9 on macOS — `mac/build.sh` (CI builds it on every push and attaches it to releases)
 - Android: JDK 17 + Android SDK — `android/gradlew assembleDebug`
 - Release: bump `VERSION`, then `tools/release.ps1`
