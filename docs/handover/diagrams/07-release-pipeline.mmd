@@ -1,0 +1,29 @@
+flowchart LR
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    dev(["Developer bumps VERSION<br/>e.g. 1.2.0 to 1.2.1"])
+    script["Run tools/release.ps1<br/>on the Windows dev machine"]
+    apk["Build Android APK<br/>signed with the release key"]
+    key[("Release key<br/>~/.config/copycat, back it up")]:::wait
+    exe["Build Windows exe<br/>self-contained, about 80 MB"]
+    push["git push main"]
+    rel["gh release create vX<br/>attach APK and exe"]:::ok
+    ci["GitHub Actions on a Mac<br/>runs on release published"]:::auto
+    macb["mac/build.sh<br/>universal app, ad-hoc signed"]:::auto
+    up["Attach CopyCat-mac.zip<br/>a few minutes later"]:::auto
+    users(["Installed apps pick it up<br/>on their next update check"]):::ok
+
+    dev --> script
+    script --> apk
+    key -.->|"signs"| apk
+    script --> exe
+    apk --> push
+    exe --> push
+    push --> rel
+    rel -->|"release published event"| ci --> macb --> up --> users
+    rel -->|"APK and exe live now"| users

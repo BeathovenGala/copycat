@@ -1,0 +1,22 @@
+flowchart LR
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    subgraph colour["Colour"]
+        c1["Green = worked, the happy path"]:::ok
+        c2["Red = failed or stopped"]:::bad
+        c3["Yellow = waiting, retrying, or switched off"]:::wait
+        c4["Blue = automatic, no human involved"]:::auto
+        c5["Grey = outside CopyCat: OS, GitHub, other apps"]:::ext
+    end
+    subgraph shape["Shape"]
+        s1(["Rounded = start or finish"])
+        s2["Box = an action"]
+        s3{"Diamond = a decision"}
+        s4[("Cylinder = stored data")]
+    end
+    class colour,shape grp

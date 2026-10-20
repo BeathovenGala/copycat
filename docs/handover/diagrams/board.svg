@@ -1,0 +1,329 @@
+<svg>
+  <text x="0" y="120" font-family="noto_sans" font-size="120" font-weight="bold" fill="#1a1a1a">CopyCat knowledge handover</text>
+  <textArea x="0" y="180" width="3600" font-family="noto_sans" font-size="36" fill="#595959">Send what you copy, share or screenshot on a phone straight to a laptop clipboard, over the same Wi-Fi, no cloud.<br/>Android app, Windows tray app, Mac menu bar app, and a web page for iPhones. Code and downloads: https://github.com/BeathovenGala/copycat<br/>Read the views in order. Every number on these diagrams comes from a constant in the code.</textArea>
+  <g id="f0" transform="translate(0,600)" data-frame="0. Legend">
+    <rect data-type="frame" x="0" y="0" width="2600" height="1800" fill="#ffffff" data-title="0. Legend" />
+    <text x="64" y="120" font-family="noto_sans" font-size="64" font-weight="bold" fill="#1a1a1a">0. Legend</text>
+    <textArea x="64" y="154" width="2472" font-family="noto_sans" font-size="28" fill="#595959">Colours and shapes mean the same thing in every view.</textArea>
+    <foreignObject id="d0" x="64" y="244" width="1600" height="900" data-type="diagram" data-title="0. Legend">
+flowchart LR
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    subgraph colour["Colour"]
+        c1["Green = worked, the happy path"]:::ok
+        c2["Red = failed or stopped"]:::bad
+        c3["Yellow = waiting, retrying, or switched off"]:::wait
+        c4["Blue = automatic, no human involved"]:::auto
+        c5["Grey = outside CopyCat: OS, GitHub, other apps"]:::ext
+    end
+    subgraph shape["Shape"]
+        s1(["Rounded = start or finish"])
+        s2["Box = an action"]
+        s3{"Diamond = a decision"}
+        s4[("Cylinder = stored data")]
+    end
+    class colour,shape grp
+</foreignObject>
+  </g>
+  <g id="f1" transform="translate(2920,600)" data-frame="1. System overview">
+    <rect data-type="frame" x="0" y="0" width="2600" height="1800" fill="#ffffff" data-title="1. System overview" />
+    <text x="64" y="120" font-family="noto_sans" font-size="64" font-weight="bold" fill="#1a1a1a">1. System overview</text>
+    <textArea x="64" y="154" width="2472" font-family="noto_sans" font-size="28" fill="#595959">Phone and laptop talk directly over Wi-Fi. GitHub is only used for downloads and updates.</textArea>
+    <foreignObject id="d1" x="64" y="244" width="1600" height="900" data-type="diagram" data-title="1. System overview">
+flowchart LR
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    subgraph phone["Phone"]
+        android["Android app&lt;br/&gt;share, clipboard, screenshots"]:::ok
+        web["Web page in a browser&lt;br/&gt;iPhone or any phone"]:::ok
+    end
+    subgraph wifi["Same Wi-Fi network, no cloud"]
+        udp["UDP port 47821&lt;br/&gt;find the laptop"]:::auto
+        http["HTTP port 47820&lt;br/&gt;pair and send"]:::auto
+    end
+    subgraph laptop["Laptop"]
+        win["Windows tray app&lt;br/&gt;.NET 8, starts with Windows"]:::ok
+        mac["Mac menu bar app&lt;br/&gt;Swift, starts at login"]:::ok
+    end
+    clip(["Laptop clipboard&lt;br/&gt;ready to paste"]):::ok
+    files[("Downloads/CopyCat&lt;br/&gt;received files")]
+    hist[("History&lt;br/&gt;last 50 items")]
+    gh[/"GitHub Releases&lt;br/&gt;downloads and updates"/]:::ext
+
+    android --&gt;|"broadcast: who is CopyCat?"| udp
+    android --&gt;|"text and files"| http
+    web --&gt;|"page is served by the laptop"| http
+    udp --&gt; win
+    udp --&gt; mac
+    http --&gt; win
+    http --&gt; mac
+    win --&gt; clip
+    mac --&gt; clip
+    win --&gt; files
+    win --&gt; hist
+    mac --&gt; files
+    mac --&gt; hist
+    gh -.-&gt;|"self-update checks"| android
+    gh -.-&gt;|"self-update checks"| win
+    gh -.-&gt;|"self-update checks"| mac
+    class phone,wifi,laptop grp
+</foreignObject>
+  </g>
+  <g id="f2" transform="translate(5840,600)" data-frame="2. Finding and pairing the laptop">
+    <rect data-type="frame" x="0" y="0" width="2600" height="1800" fill="#ffffff" data-title="2. Finding and pairing the laptop" />
+    <text x="64" y="120" font-family="noto_sans" font-size="64" font-weight="bold" fill="#1a1a1a">2. Finding and pairing the laptop</text>
+    <textArea x="64" y="154" width="2472" font-family="noto_sans" font-size="28" fill="#595959">Runs every time the phone needs the laptop. No PIN unless the laptop owner turns auto-connect off.</textArea>
+    <foreignObject id="d2" x="64" y="244" width="1600" height="900" data-type="diagram" data-title="2. Finding and pairing the laptop">
+flowchart TD
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    start(["Phone needs the laptop&lt;br/&gt;app opened, or something to send"]):::ok
+    ping{"Saved address answers&lt;br/&gt;GET /ping?"}
+    use(["Use saved laptop"]):::ok
+    bcast["Broadcast COPYCAT_DISCOVER&lt;br/&gt;listen 1.5 s for replies"]:::auto
+    paired{"Paired before?&lt;br/&gt;has a saved key"}
+    same{"Saved laptop name&lt;br/&gt;among the replies?"}
+    update["Update saved address&lt;br/&gt;laptop IP changed"]:::auto
+    gone(["Not reachable&lt;br/&gt;item waits in queue"]):::wait
+    count{"How many laptops&lt;br/&gt;replied?"}
+    none(["None: type the IP&lt;br/&gt;or retry later"]):::bad
+    choose["Ask: which laptop is yours?"]:::wait
+    pair["POST /pair&lt;br/&gt;empty PIN"]:::auto
+    accept{"Laptop setting:&lt;br/&gt;connect phones automatically?"}
+    pin["Ask for 6-digit PIN&lt;br/&gt;5 wrong tries = 1 min lockout"]:::wait
+    save(["Save name, address, key&lt;br/&gt;paired"]):::ok
+
+    start --&gt; ping
+    ping --&gt;|"yes"| use
+    ping --&gt;|"no"| bcast
+    bcast --&gt; paired
+    paired --&gt;|"yes"| same
+    same --&gt;|"yes"| update --&gt; use
+    same --&gt;|"no, never switches on its own"| gone
+    paired --&gt;|"no"| count
+    count --&gt;|"0"| none
+    count --&gt;|"exactly 1"| pair
+    count --&gt;|"2 or more"| choose --&gt; pair
+    pair --&gt; accept
+    accept --&gt;|"on, the default"| save
+    accept --&gt;|"off"| pin --&gt; save
+</foreignObject>
+  </g>
+  <g id="f3" transform="translate(8760,600)" data-frame="3. Sending something">
+    <rect data-type="frame" x="0" y="0" width="2600" height="1800" fill="#ffffff" data-title="3. Sending something" />
+    <text x="64" y="120" font-family="noto_sans" font-size="64" font-weight="bold" fill="#1a1a1a">3. Sending something</text>
+    <textArea x="64" y="154" width="2472" font-family="noto_sans" font-size="28" fill="#595959">Every way to send ends in the same two HTTP calls on the laptop.</textArea>
+    <foreignObject id="d3" x="64" y="244" width="1600" height="900" data-type="diagram" data-title="3. Sending something">
+flowchart LR
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    subgraph capture["Ways to send from the phone"]
+        share["Share sheet&lt;br/&gt;CopyCat to Laptop"]
+        tile["Quick Settings tile or&lt;br/&gt;notification button"]
+        autoc["Auto-send on copy&lt;br/&gt;see view 4"]:::auto
+        shots["New screenshot&lt;br/&gt;MediaStore watcher"]:::auto
+        webp["Web page&lt;br/&gt;paste or pick files"]
+    end
+    queue["Sender&lt;br/&gt;one item at a time, saved to history"]:::auto
+    post["POST /text or /file&lt;br/&gt;with the phone key"]:::auto
+    token{"Laptop: key valid?"}
+    repair["Forget key, pair again&lt;br/&gt;then retry once"]:::wait
+    kind{"Text or file?"}
+    settext["Put text on clipboard"]:::ok
+    savefile[("Save to Downloads/CopyCat")]
+    img{"Is it an image?"}
+    setimg["Clipboard gets image&lt;br/&gt;and the file"]:::ok
+    setfile["Clipboard gets the file"]:::ok
+    done(["Add to history,&lt;br/&gt;show notification"]):::ok
+    fail(["Not delivered&lt;br/&gt;retried later, see view 5"]):::bad
+
+    share --&gt; queue
+    tile --&gt; queue
+    autoc --&gt; queue
+    shots --&gt; queue
+    webp --&gt; post
+    queue --&gt; post
+    post --&gt;|"laptop unreachable"| fail
+    post --&gt; token
+    token --&gt;|"no, 401"| repair --&gt; post
+    token --&gt;|"yes"| kind
+    kind --&gt;|"text"| settext --&gt; done
+    kind --&gt;|"file"| savefile --&gt; img
+    img --&gt;|"yes"| setimg --&gt; done
+    img --&gt;|"no"| setfile --&gt; done
+    class capture grp
+</foreignObject>
+  </g>
+  <g id="f4" transform="translate(0,2720)" data-frame="4. Auto-send on copy (Android trick)">
+    <rect data-type="frame" x="0" y="0" width="2600" height="1800" fill="#ffffff" data-title="4. Auto-send on copy (Android trick)" />
+    <text x="64" y="120" font-family="noto_sans" font-size="64" font-weight="bold" fill="#1a1a1a">4. Auto-send on copy (Android trick)</text>
+    <textArea x="64" y="154" width="2472" font-family="noto_sans" font-size="28" fill="#595959">Android hides the clipboard from background apps, so CopyCat reacts to the system&#x27;s own denial log.</textArea>
+    <foreignObject id="d4" x="64" y="244" width="1600" height="900" data-type="diagram" data-title="4. Auto-send on copy (Android trick)">
+sequenceDiagram
+    actor User
+    participant Other as Any other app
+    participant OS as Android clipboard service
+    participant Watch as CopyCat WatchService
+    participant Clip as ClipActivity (invisible)
+    participant Laptop
+    Note over Watch: Needs READ_LOGS (granted once over adb)&lt;br/&gt;and Display over other apps
+    User-&gt;&gt;Other: Copy text
+    Other-&gt;&gt;OS: Set clipboard
+    OS--&gt;&gt;Watch: Clipboard changed, CopyCat is in the background
+    OS-&gt;&gt;OS: Logs Denying clipboard access to com.copycat.app
+    Watch-&gt;&gt;Watch: logcat reader spots that line, 400 ms debounce
+    Watch-&gt;&gt;Clip: Open invisible screen for a moment
+    Clip-&gt;&gt;OS: Read clipboard, allowed because it has focus
+    alt Same text as last time
+        Clip-&gt;&gt;Clip: Skip
+    else New text
+        Clip-&gt;&gt;Laptop: POST /text
+        Laptop--&gt;&gt;Clip: 200 OK, now on the laptop clipboard
+    end
+    Clip-&gt;&gt;Clip: Close, the user app gets focus back
+    Note over OS,Watch: Android shows a pasted-from-clipboard notice each time.&lt;br/&gt;After a phone restart, open CopyCat once to allow log access again.
+</foreignObject>
+  </g>
+  <g id="f5" transform="translate(2920,2720)" data-frame="5. Offline queue and reconnect">
+    <rect data-type="frame" x="0" y="0" width="2600" height="1800" fill="#ffffff" data-title="5. Offline queue and reconnect" />
+    <text x="64" y="120" font-family="noto_sans" font-size="64" font-weight="bold" fill="#1a1a1a">5. Offline queue and reconnect</text>
+    <textArea x="64" y="154" width="2472" font-family="noto_sans" font-size="28" fill="#595959">Nothing sent while apart is lost. Items wait up to 24 hours and go out on the next trigger.</textArea>
+    <foreignObject id="d5" x="64" y="244" width="1600" height="900" data-type="diagram" data-title="5. Offline queue and reconnect">
+flowchart TD
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    failed(["Send failed&lt;br/&gt;item saved as not delivered"]):::bad
+    svc{"Background service on?&lt;br/&gt;either auto switch enabled"}
+    wifi["Wi-Fi joined callback&lt;br/&gt;wait 3 s for an IP"]:::auto
+    tick["Every 30 s while items wait"]:::auto
+    job["Android job on unmetered Wi-Fi&lt;br/&gt;every 5 min"]:::auto
+    open["User opens CopyCat"]
+    retry["Connect and retry&lt;br/&gt;find laptop, see view 2"]:::auto
+    found{"Laptop found?"}
+    sendall["Send waiting items&lt;br/&gt;oldest first, last 24 h only"]:::ok
+    marked(["Marked sent"]):::ok
+    waitmore(["Keep waiting&lt;br/&gt;for the next trigger"]):::wait
+    old(["Older than 24 h&lt;br/&gt;tap it in the app to resend"]):::wait
+
+    failed --&gt; svc
+    svc --&gt;|"yes"| wifi
+    svc --&gt;|"yes"| tick
+    svc --&gt;|"no"| job
+    failed --&gt; open
+    wifi --&gt; retry
+    tick --&gt; retry
+    job --&gt; retry
+    open --&gt; retry
+    retry --&gt; found
+    found --&gt;|"yes"| sendall --&gt; marked
+    found --&gt;|"no"| waitmore
+    failed -.-&gt;|"after 24 h"| old
+</foreignObject>
+  </g>
+  <g id="f6" transform="translate(5840,2720)" data-frame="6. Auto-updates">
+    <rect data-type="frame" x="0" y="0" width="2600" height="1800" fill="#ffffff" data-title="6. Auto-updates" />
+    <text x="64" y="120" font-family="noto_sans" font-size="64" font-weight="bold" fill="#1a1a1a">6. Auto-updates</text>
+    <textArea x="64" y="154" width="2472" font-family="noto_sans" font-size="28" fill="#595959">Each app checks GitHub for a newer release. Laptops update silently; Android asks the user to confirm.</textArea>
+    <foreignObject id="d6" x="64" y="244" width="1600" height="900" data-type="diagram" data-title="6. Auto-updates">
+flowchart LR
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    gh[/"GitHub latest release&lt;br/&gt;api.github.com"/]:::ext
+    subgraph windows["Windows laptop"]
+        w1["30 s after start,&lt;br/&gt;then every 12 h"]:::auto
+        w2["Download CopyCat.exe&lt;br/&gt;as CopyCat.new.exe"]:::auto
+        w3["update.cmd waits for exit,&lt;br/&gt;swaps the file, relaunches"]:::auto
+        w4(["Updated silently"]):::ok
+    end
+    subgraph macos["Mac laptop"]
+        m1["30 s after start,&lt;br/&gt;then every 12 h"]:::auto
+        m2["Download and unzip&lt;br/&gt;CopyCat-mac.zip"]:::auto
+        m3["Shell script swaps the app,&lt;br/&gt;clears quarantine, reopens"]:::auto
+        m4(["Updated silently"]):::ok
+    end
+    subgraph androidp["Android phone"]
+        a1["On app open or service tick,&lt;br/&gt;at most every 6 h"]:::auto
+        a2["Update button and&lt;br/&gt;one notification per version"]:::wait
+        a3["User taps: download APK,&lt;br/&gt;system installer asks to confirm"]
+        a4{"Signed with the same&lt;br/&gt;release key?"}
+        a5(["Installed, settings kept"]):::ok
+        a6(["Rejected by Android"]):::bad
+    end
+    w1 --&gt;|"newer version?"| gh
+    m1 --&gt;|"newer version?"| gh
+    a1 --&gt;|"newer version?"| gh
+    gh --&gt;|"yes, Windows"| w2 --&gt; w3 --&gt; w4
+    gh --&gt;|"yes, Mac"| m2 --&gt; m3 --&gt; m4
+    gh --&gt;|"yes, Android"| a2 --&gt; a3 --&gt; a4
+    a4 --&gt;|"yes"| a5
+    a4 --&gt;|"no"| a6
+    class windows,macos,androidp grp
+</foreignObject>
+  </g>
+  <g id="f7" transform="translate(8760,2720)" data-frame="7. Shipping a new version">
+    <rect data-type="frame" x="0" y="0" width="2600" height="1800" fill="#ffffff" data-title="7. Shipping a new version" />
+    <text x="64" y="120" font-family="noto_sans" font-size="64" font-weight="bold" fill="#1a1a1a">7. Shipping a new version</text>
+    <textArea x="64" y="154" width="2472" font-family="noto_sans" font-size="28" fill="#595959">One script builds and publishes Windows and Android; GitHub Actions adds the Mac build.</textArea>
+    <foreignObject id="d7" x="64" y="244" width="1600" height="900" data-type="diagram" data-title="7. Shipping a new version">
+flowchart LR
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    dev(["Developer bumps VERSION&lt;br/&gt;e.g. 1.2.0 to 1.2.1"])
+    script["Run tools/release.ps1&lt;br/&gt;on the Windows dev machine"]
+    apk["Build Android APK&lt;br/&gt;signed with the release key"]
+    key[("Release key&lt;br/&gt;~/.config/copycat, back it up")]:::wait
+    exe["Build Windows exe&lt;br/&gt;self-contained, about 80 MB"]
+    push["git push main"]
+    rel["gh release create vX&lt;br/&gt;attach APK and exe"]:::ok
+    ci["GitHub Actions on a Mac&lt;br/&gt;runs on release published"]:::auto
+    macb["mac/build.sh&lt;br/&gt;universal app, ad-hoc signed"]:::auto
+    up["Attach CopyCat-mac.zip&lt;br/&gt;a few minutes later"]:::auto
+    users(["Installed apps pick it up&lt;br/&gt;on their next update check"]):::ok
+
+    dev --&gt; script
+    script --&gt; apk
+    key -.-&gt;|"signs"| apk
+    script --&gt; exe
+    apk --&gt; push
+    exe --&gt; push
+    push --&gt; rel
+    rel --&gt;|"release published event"| ci --&gt; macb --&gt; up --&gt; users
+    rel --&gt;|"APK and exe live now"| users
+</foreignObject>
+  </g>
+</svg>

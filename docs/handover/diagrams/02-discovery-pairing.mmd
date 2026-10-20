@@ -1,0 +1,38 @@
+flowchart TD
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    start(["Phone needs the laptop<br/>app opened, or something to send"]):::ok
+    ping{"Saved address answers<br/>GET /ping?"}
+    use(["Use saved laptop"]):::ok
+    bcast["Broadcast COPYCAT_DISCOVER<br/>listen 1.5 s for replies"]:::auto
+    paired{"Paired before?<br/>has a saved key"}
+    same{"Saved laptop name<br/>among the replies?"}
+    update["Update saved address<br/>laptop IP changed"]:::auto
+    gone(["Not reachable<br/>item waits in queue"]):::wait
+    count{"How many laptops<br/>replied?"}
+    none(["None: type the IP<br/>or retry later"]):::bad
+    choose["Ask: which laptop is yours?"]:::wait
+    pair["POST /pair<br/>empty PIN"]:::auto
+    accept{"Laptop setting:<br/>connect phones automatically?"}
+    pin["Ask for 6-digit PIN<br/>5 wrong tries = 1 min lockout"]:::wait
+    save(["Save name, address, key<br/>paired"]):::ok
+
+    start --> ping
+    ping -->|"yes"| use
+    ping -->|"no"| bcast
+    bcast --> paired
+    paired -->|"yes"| same
+    same -->|"yes"| update --> use
+    same -->|"no, never switches on its own"| gone
+    paired -->|"no"| count
+    count -->|"0"| none
+    count -->|"exactly 1"| pair
+    count -->|"2 or more"| choose --> pair
+    pair --> accept
+    accept -->|"on, the default"| save
+    accept -->|"off"| pin --> save

@@ -1,0 +1,38 @@
+flowchart LR
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    gh[/"GitHub latest release<br/>api.github.com"/]:::ext
+    subgraph windows["Windows laptop"]
+        w1["30 s after start,<br/>then every 12 h"]:::auto
+        w2["Download CopyCat.exe<br/>as CopyCat.new.exe"]:::auto
+        w3["update.cmd waits for exit,<br/>swaps the file, relaunches"]:::auto
+        w4(["Updated silently"]):::ok
+    end
+    subgraph macos["Mac laptop"]
+        m1["30 s after start,<br/>then every 12 h"]:::auto
+        m2["Download and unzip<br/>CopyCat-mac.zip"]:::auto
+        m3["Shell script swaps the app,<br/>clears quarantine, reopens"]:::auto
+        m4(["Updated silently"]):::ok
+    end
+    subgraph androidp["Android phone"]
+        a1["On app open or service tick,<br/>at most every 6 h"]:::auto
+        a2["Update button and<br/>one notification per version"]:::wait
+        a3["User taps: download APK,<br/>system installer asks to confirm"]
+        a4{"Signed with the same<br/>release key?"}
+        a5(["Installed, settings kept"]):::ok
+        a6(["Rejected by Android"]):::bad
+    end
+    w1 -->|"newer version?"| gh
+    m1 -->|"newer version?"| gh
+    a1 -->|"newer version?"| gh
+    gh -->|"yes, Windows"| w2 --> w3 --> w4
+    gh -->|"yes, Mac"| m2 --> m3 --> m4
+    gh -->|"yes, Android"| a2 --> a3 --> a4
+    a4 -->|"yes"| a5
+    a4 -->|"no"| a6
+    class windows,macos,androidp grp

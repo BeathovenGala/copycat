@@ -1,0 +1,23 @@
+sequenceDiagram
+    actor User
+    participant Other as Any other app
+    participant OS as Android clipboard service
+    participant Watch as CopyCat WatchService
+    participant Clip as ClipActivity (invisible)
+    participant Laptop
+    Note over Watch: Needs READ_LOGS (granted once over adb)<br/>and Display over other apps
+    User->>Other: Copy text
+    Other->>OS: Set clipboard
+    OS-->>Watch: Clipboard changed, CopyCat is in the background
+    OS->>OS: Logs Denying clipboard access to com.copycat.app
+    Watch->>Watch: logcat reader spots that line, 400 ms debounce
+    Watch->>Clip: Open invisible screen for a moment
+    Clip->>OS: Read clipboard, allowed because it has focus
+    alt Same text as last time
+        Clip->>Clip: Skip
+    else New text
+        Clip->>Laptop: POST /text
+        Laptop-->>Clip: 200 OK, now on the laptop clipboard
+    end
+    Clip->>Clip: Close, the user app gets focus back
+    Note over OS,Watch: Android shows a pasted-from-clipboard notice each time.<br/>After a phone restart, open CopyCat once to allow log access again.

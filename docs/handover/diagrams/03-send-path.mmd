@@ -1,0 +1,43 @@
+flowchart LR
+    classDef ok fill:#B3E65F,stroke:#6E9A24,color:#2F440B
+    classDef bad fill:#FFC6C6,stroke:#D64545,color:#6B0A0A
+    classDef wait fill:#FFE86D,stroke:#A28E26,color:#574900
+    classDef auto fill:#9CE6FF,stroke:#2C97BB,color:#1C4657
+    classDef ext fill:#DDDDD8,stroke:#8A8A7E,color:#434339
+    classDef default fill:#FFFFFF,stroke:#757575,color:#313131
+    classDef grp fill:#F7F7F7,stroke:#B0B0B0,color:#313131
+    subgraph capture["Ways to send from the phone"]
+        share["Share sheet<br/>CopyCat to Laptop"]
+        tile["Quick Settings tile or<br/>notification button"]
+        autoc["Auto-send on copy<br/>see view 4"]:::auto
+        shots["New screenshot<br/>MediaStore watcher"]:::auto
+        webp["Web page<br/>paste or pick files"]
+    end
+    queue["Sender<br/>one item at a time, saved to history"]:::auto
+    post["POST /text or /file<br/>with the phone key"]:::auto
+    token{"Laptop: key valid?"}
+    repair["Forget key, pair again<br/>then retry once"]:::wait
+    kind{"Text or file?"}
+    settext["Put text on clipboard"]:::ok
+    savefile[("Save to Downloads/CopyCat")]
+    img{"Is it an image?"}
+    setimg["Clipboard gets image<br/>and the file"]:::ok
+    setfile["Clipboard gets the file"]:::ok
+    done(["Add to history,<br/>show notification"]):::ok
+    fail(["Not delivered<br/>retried later, see view 5"]):::bad
+
+    share --> queue
+    tile --> queue
+    autoc --> queue
+    shots --> queue
+    webp --> post
+    queue --> post
+    post -->|"laptop unreachable"| fail
+    post --> token
+    token -->|"no, 401"| repair --> post
+    token -->|"yes"| kind
+    kind -->|"text"| settext --> done
+    kind -->|"file"| savefile --> img
+    img -->|"yes"| setimg --> done
+    img -->|"no"| setfile --> done
+    class capture grp
