@@ -9,7 +9,9 @@ import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.HttpURLConnection
+import java.net.Inet4Address
 import java.net.InetAddress
+import java.net.NetworkInterface
 import java.net.SocketTimeoutException
 import java.net.URL
 import java.net.URLEncoder
@@ -33,8 +35,10 @@ object Net {
             socket.broadcast = true
             socket.soTimeout = 300
             val msg = "COPYCAT_DISCOVER".toByteArray()
-            val targets = (listOf(InetAddress.getByName("255.255.255.255")) + listOfNotNull(subnetBroadcast(context))).distinct()
-            repeat(2) { targets.forEach { socket.send(DatagramPacket(msg, msg.size, it, DISCOVERY_PORT)) } }
+            val targets = (listOf(InetAddress.getByName("255.255.255.255")) + listOfNotNull(subnetBroadcast(context)) + interfaceBroadcasts()).distinct()
+            repeat(2) {
+                targets.forEach { runCatching { socket.send(DatagramPacket(msg, msg.size, it, DISCOVERY_PORT)) } }
+            }
             val deadline = System.currentTimeMillis() + DISCOVERY_WINDOW_MS
             val buf = ByteArray(1024)
             while (System.currentTimeMillis() < deadline) {
@@ -65,6 +69,16 @@ object Net {
         val bytes = ByteArray(4) { i -> (broadcast shr (i * 8) and 0xFF).toByte() }
         return InetAddress.getByAddress(bytes)
     }
+
+    // 255.255.255.255 follows the default route (mobile data when the phone is the hotspot) and
+    // dhcpInfo is empty then, so also broadcast on every local interface, including the hotspot's.
+    private fun interfaceBroadcasts(): List<InetAddress> = runCatching {
+        NetworkInterface.getNetworkInterfaces().toList()
+            .filter { it.isUp && !it.isLoopback }
+            .flatMap { it.interfaceAddresses }
+            .filter { it.address is Inet4Address }
+            .mapNotNull { it.broadcast }
+    }.getOrDefault(emptyList())
 
     fun ping(host: String, port: Int): String? = runCatching {
         val conn = open("http://$host:$port/ping", "GET")

@@ -252,6 +252,8 @@ public class TrayApp : ApplicationContext
     static IEnumerable<string> LocalAddresses() =>
         NetworkInterface.GetAllNetworkInterfaces()
             .Where(n => n.OperationalStatus == OperationalStatus.Up && n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+            // Real Wi-Fi/hotspot first: virtual adapters (WSL, Hyper-V, VPN) usually have no gateway.
+            .OrderByDescending(n => n.GetIPProperties().GatewayAddresses.Any(g => g.Address.AddressFamily == AddressFamily.InterNetwork && !g.Address.Equals(System.Net.IPAddress.Any)))
             .SelectMany(n => n.GetIPProperties().UnicastAddresses)
             .Where(a => a.Address.AddressFamily == AddressFamily.InterNetwork && !a.Address.ToString().StartsWith("169.254"))
             .Select(a => a.Address.ToString())
